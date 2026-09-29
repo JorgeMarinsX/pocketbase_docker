@@ -1,0 +1,8 @@
+#Adding pb_migrations/ to prevent 
+# a new project from getting migrations from 
+# another project.
+
+pb_data
+pb_migrations
+
+

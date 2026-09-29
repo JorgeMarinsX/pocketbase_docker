@@ -1,0 +1,34 @@
+services:
+  pocketbase:
+    image: ${PB_IMAGE:?set PB_IMAGE, e.g. registry.example.com/pocketbase:0.40.4}
+    restart: unless-stopped
+    environment:
+      PB_ENCRYPTION_KEY: ${PB_ENCRYPTION_KEY:-} # optional, 32 chars
+      PB_SUPERUSER_EMAIL: ${PB_SUPERUSER_EMAIL:-}
+      PB_SUPERUSER_PASSWORD: ${PB_SUPERUSER_PASSWORD:-}
+    volumes:
+      - pb_data:/pb/pb_data
+      - pb_public:/pb/pb_public
+      - pb_hooks:/pb/pb_hooks
+      - pb_migrations:/pb/pb_migrations
+    networks:
+      - traefik
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=${TRAEFIK_NETWORK:-traefik}
+      - traefik.http.routers.${PB_NAME:-pocketbase}.rule=Host(`${PB_DOMAIN:?set PB_DOMAIN, e.g. api.example.com}`)
+      - traefik.http.routers.${PB_NAME:-pocketbase}.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}
+      - traefik.http.routers.${PB_NAME:-pocketbase}.tls.certresolver=${TRAEFIK_CERTRESOLVER:-letsencrypt}
+      - traefik.http.routers.${PB_NAME:-pocketbase}.service=${PB_NAME:-pocketbase}
+      - traefik.http.services.${PB_NAME:-pocketbase}.loadbalancer.server.port=8090
+
+volumes:
+  pb_data:
+  pb_public:
+  pb_hooks:
+  pb_migrations:
+
+networks:
+  traefik:
+    external: true
+    name: ${TRAEFIK_NETWORK:-traefik}

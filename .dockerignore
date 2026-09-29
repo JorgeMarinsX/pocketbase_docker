@@ -1,0 +1,3 @@
+# Only the binary goes into the image; never local pb_data or migrations.
+*
+!pocketbase
