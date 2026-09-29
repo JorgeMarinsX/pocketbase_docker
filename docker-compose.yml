@@ -1,6 +1,6 @@
 services:
   pocketbase:
-    image: ${PB_IMAGE:?set PB_IMAGE, e.g. registry.example.com/pocketbase:0.40.4}
+    image: ${PB_IMAGE:?set PB_IMAGE, e.g. ghcr.io/jorgemarinsx/pocketbase_docker:0.0.1-prod}
     restart: unless-stopped
     environment:
       PB_ENCRYPTION_KEY: ${PB_ENCRYPTION_KEY:-} # optional, 32 chars
