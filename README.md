@@ -85,13 +85,64 @@ Also recommended by the [production guide](https://pocketbase.io/docs/going-to-p
 | `pb_hooks` | `/pb/pb_hooks` | JS hooks (`*.pb.js`), reloaded automatically on change |
 | `pb_migrations` | `/pb/pb_migrations` | JS migrations, auto-generated when collections change in the dashboard. Seeded with `0_superuser_from_env.js` on first deploy |
 
-To add hooks or static files to a named volume:
+To add static files to a named volume:
 
 ```sh
-docker cp main.pb.js <container>:/pb/pb_hooks/
+docker cp index.html <container>:/pb/pb_public/
 ```
 
+For hooks, see [Extending with JS hooks](#extending-with-js-hooks).
+
 The container runs as uid/gid `1000`. To switch to bind mounts (host paths), run `chown -R 1000:1000` on those host folders first. Bind mounts aren't seeded from the image, so the superuser migration won't be there; use the installer link or CLI instead.
+
+## Extending with JS hooks
+
+You don't need a fork or a custom build. The stock binary runs [JavaScript hooks](https://pocketbase.io/docs/js-overview/): custom routes, record events, emails, cron jobs and more. Put `*.pb.js` files in the `pb_hooks` volume, and PocketBase reloads them when they change. Only the Go extension docs (`go-*` pages) need a custom binary.
+
+To add a file, open the container **Console** in Portainer (`/bin/sh`) and paste:
+
+```sh
+cat > /pb/pb_hooks/send-email.pb.js <<'EOF'
+...file contents...
+EOF
+```
+
+Or, from the Docker host: `docker cp send-email.pb.js <container>:/pb/pb_hooks/`.
+
+Hooks run inside PocketBase, so other apps reach them over HTTP. Either they create a record through the REST API and a record hook reacts to it, or they call a custom route.
+
+### Example: send email from another app
+
+This needs SMTP set up in **Settings → Mail settings**. The image has no local mail server.
+
+```js
+// pb_hooks/send-email.pb.js
+routerAdd("POST", "/api/send-email", (e) => {
+  const body = e.requestInfo().body
+  e.app.newMailClient().send(new MailerMessage({
+    from: { address: e.app.settings().meta.senderAddress, name: e.app.settings().meta.senderName },
+    to: [{ address: body.to }],
+    subject: body.subject,
+    html: body.html,
+  }))
+  return e.json(200, { sent: true })
+}, $apis.requireSuperuserAuth())
+```
+
+Call it with a superuser token (see [Sending emails](https://pocketbase.io/docs/js-sending-emails/)):
+
+```
+POST https://<PB_DOMAIN>/api/send-email
+Authorization: <superuser token>
+Content-Type: application/json
+
+{"to": "someone@example.com", "subject": "Hello", "html": "<p>Hi!</p>"}
+```
+
+> [!WARNING]
+> Keep an auth middleware (`$apis.requireSuperuserAuth()` or `$apis.requireAuth()`) on routes like this. Without one, anyone can use your mail account to send spam.
+
+Hook files exist only in the volume, not in this repo, so keep their source under version control somewhere.
 
 ## Updating PocketBase
 
