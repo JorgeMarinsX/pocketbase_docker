@@ -30,6 +30,7 @@ To build locally for testing: `docker build --platform linux/amd64 -t pocketbase
 2. **Stacks → Add stack → Web editor**: paste [docker-compose.yml](docker-compose.yml).
 3. **Environment variables**: set the values from [.env.example](.env.example) (or use "Load variables from .env file").
 4. Deploy.
+5. Log in and set the trusted proxy header. This is required; see [After the first login](#after-the-first-login-dashboard--settings).
 
 | Variable | Default | Purpose |
 |---|---|---|
@@ -66,8 +67,14 @@ The dashboard is at `https://<PB_DOMAIN>/_/`.
 
 ## After the first login (Dashboard → Settings)
 
-- **Application → Trusted proxy**: add the `X-Forwarded-For` header and leave "use leftmost IP" off. Without this, logs and rate limits see Traefik's IP instead of the client's.
-- Recommended by the [production guide](https://pocketbase.io/docs/going-to-production/): SMTP mail server, rate limiting, MFA for superusers, and scheduled backups (local or S3).
+> [!IMPORTANT]
+> **Required manual step for rate limiting behind Traefik.** In **Settings → Application → Trusted IP proxy headers**, add `X-Forwarded-For` and leave "use leftmost IP" off.
+>
+> Every request reaches PocketBase through Traefik. Without this header, PocketBase sees Traefik's IP as every client's IP, so rate limiting treats all users as one client and logs show Traefik's IP.
+>
+> This is stored in the database, not in the image or the compose file, so set it on every new deployment.
+
+Also recommended by the [production guide](https://pocketbase.io/docs/going-to-production/): SMTP mail server, rate limiting, MFA for superusers, and scheduled backups (local or S3).
 
 ## Volumes
 
