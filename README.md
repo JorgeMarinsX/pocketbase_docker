@@ -1,6 +1,6 @@
 # PocketBase Docker
 
-Latest pocketbase: **v0.40.4** (linux/amd64 binary in this repo).
+Latest pocketbase: **v0.40.5** (linux/amd64 binary in this repo).
 
 Packages the `pocketbase` binary into an image on GitHub Container Registry (GHCR), deployed as a Portainer stack behind Traefik.
 
